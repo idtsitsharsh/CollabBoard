@@ -1,5 +1,5 @@
 {
-  "name": "Server Side",
+  "name": "backend",
   "version": "1.0.0",
   "description": "Backend for collaborative whiteboard application",
   "main": "server.js",
