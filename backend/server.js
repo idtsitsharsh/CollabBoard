@@ -54,11 +54,18 @@ mongoose.connect(process.env.MONGODB_URI, {
 // ✅ Socket.IO setup
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Socket.IO CORS not allowed'));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }
 });
+
 
 io.on('connection', (socket) => {
   console.log('🟢 New socket connected:', socket.id);
