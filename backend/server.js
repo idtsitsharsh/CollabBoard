@@ -5,7 +5,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const mongoose = require('mongoose');
 const { v4: uuidv4 } = require('uuid');
-const Room = require('./model/Room');
+const Room = require('./schemas/Room');
 const bcrypt = require('bcryptjs');
 
 dotenv.config();
