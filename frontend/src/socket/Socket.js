@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import {io} from 'socket.io-client';
+import { io } from 'socket.io-client';
 
 const SocketContext = createContext();
 
@@ -19,24 +19,33 @@ export const SocketProvider = ({ children }) => {
   const [socketReady, setSocketReady] = useState(false);
 
   useEffect(() => {
-    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL;
-    const newSocket = io(SOCKET_URL);
+    const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
+
+    console.log('🔌 Connecting to Socket.IO at:', SOCKET_URL);
+
+    const newSocket = io(SOCKET_URL, {
+      transports: ['websocket'],       // 👈 Avoid polling-based CORS issues
+      withCredentials: true,           // 👈 Allow cookies if needed
+      reconnectionAttempts: 5,         // Optional: retry logic
+      timeout: 10000                   // Optional: timeout if server doesn't respond
+    });
+
     setSocketReady(false);
+
     newSocket.on('connect', () => {
       setIsConnected(true);
-      console.log('Connected to server');
+      console.log('✅ Connected to server');
     });
 
     newSocket.on('disconnect', () => {
       setIsConnected(false);
-      console.log('Disconnected from server');
+      console.log('🔌 Disconnected from server');
     });
 
     newSocket.on('room-joined', (data) => {
       setCurrentRoom(data.room);
       setUsers(data.users);
       console.log('[SocketContext] Joined room:', data.room);
-      console.log('[SocketContext] currentRoom after set:', data.room);
     });
 
     newSocket.on('user-list', (users) => {
@@ -44,7 +53,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on('join-error', (error) => {
-      console.error('Join error:', error);
+      console.error('🚫 Join error:', error);
       alert(error.message);
     });
 
@@ -52,7 +61,7 @@ export const SocketProvider = ({ children }) => {
     setSocketReady(true);
 
     return () => {
-      newSocket.close();
+      newSocket.disconnect();
       setSocketReady(false);
     };
   }, []);
@@ -75,73 +84,59 @@ export const SocketProvider = ({ children }) => {
 
   const sendDraw = (drawData) => {
     if (socket && drawData.roomId) {
-      if (drawData.type === 'stroke') {
-        socket.emit('stroke', drawData);
-      } else {
-        socket.emit('draw', drawData);
-      }
+      const event = drawData.type === 'stroke' ? 'stroke' : 'draw';
+      socket.emit(event, drawData);
     }
   };
 
   const clearCanvas = (roomId) => {
-    const effectiveRoomId = (currentRoom && currentRoom.roomId) || roomId;
+    const effectiveRoomId = currentRoom?.roomId || roomId;
     if (socket && effectiveRoomId) {
-      console.log('[SocketContext] Emitting clear-canvas for room:', effectiveRoomId);
       socket.emit('clear-canvas', { roomId: effectiveRoomId });
-    } else {
-      console.log('[SocketContext] clearCanvas: No currentRoom or socket');
     }
   };
 
   const undo = (roomId) => {
-    const effectiveRoomId = (currentRoom && currentRoom.roomId) || roomId;
+    const effectiveRoomId = currentRoom?.roomId || roomId;
     if (socket && effectiveRoomId) {
-      console.log('[SocketContext] Emitting undo for room:', effectiveRoomId);
       socket.emit('undo', { roomId: effectiveRoomId });
-    } else {
-      console.log('[SocketContext] undo: No currentRoom or socket');
     }
   };
 
   const redo = (roomId) => {
-    const effectiveRoomId = (currentRoom && currentRoom.roomId) || roomId;
+    const effectiveRoomId = currentRoom?.roomId || roomId;
     if (socket && effectiveRoomId) {
-      console.log('[SocketContext] Emitting redo for room:', effectiveRoomId);
       socket.emit('redo', { roomId: effectiveRoomId });
-    } else {
-      console.log('[SocketContext] redo: No currentRoom or socket');
     }
   };
 
   const sendMessage = (message, username, roomId) => {
-    const effectiveRoomId = (currentRoom && currentRoom.roomId) || roomId;
+    const effectiveRoomId = currentRoom?.roomId || roomId;
     if (socket && effectiveRoomId) {
       socket.emit('send-message', {
         roomId: effectiveRoomId,
-        username: username || (currentRoom && currentRoom.username) || 'Anonymous',
+        username: username || currentRoom?.username || 'Anonymous',
         message
       });
     }
   };
 
-  const value = {
-    socket,
-    isConnected,
-    currentRoom,
-    users,
-    joinRoom,
-    leaveRoom,
-    sendDraw,
-    clearCanvas,
-    undo,
-    redo,
-    sendMessage,
-    socketReady
-  };
-
   return (
-    <SocketContext.Provider value={value}>
+    <SocketContext.Provider value={{
+      socket,
+      isConnected,
+      currentRoom,
+      users,
+      joinRoom,
+      leaveRoom,
+      sendDraw,
+      clearCanvas,
+      undo,
+      redo,
+      sendMessage,
+      socketReady
+    }}>
       {children}
     </SocketContext.Provider>
   );
-}; 
+};
