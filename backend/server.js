@@ -47,7 +47,11 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 const io = new Server(server, {
-  cors: corsOptions
+  cors: {
+    origin: allowedOrigins,
+    methods: ["GET", "POST"],
+    credentials: true
+  }
 });
 
 
