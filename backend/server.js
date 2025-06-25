@@ -16,8 +16,9 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const frontendURL = process.env.FRONTEND_URL;
 const allowedOrigins = [
-  'http://localhost:3000', 
-  frontendURL
+  'http://localhost:3000',
+  'https://collab-board-omega-nine.vercel.app',
+  'https://collab-board-git-main-idtsitsharshs-projects.vercel.app'
 ];
 
 if (frontendURL) {
