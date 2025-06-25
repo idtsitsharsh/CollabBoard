@@ -24,17 +24,17 @@ export const SocketProvider = ({ children }) => {
     console.log('🔌 Connecting to Socket.IO at:', SOCKET_URL);
 
     const newSocket = io(SOCKET_URL, {
-      transports: ['websocket'],       // 👈 Avoid polling-based CORS issues
-      withCredentials: true,           // 👈 Allow cookies if needed
-      reconnectionAttempts: 5,         // Optional: retry logic
-      timeout: 10000                   // Optional: timeout if server doesn't respond
+      transports: ['websocket'],       
+      withCredentials: true,          
+      reconnectionAttempts: 5,         
+      timeout: 10000                  
     });
 
     setSocketReady(false);
 
     newSocket.on('connect', () => {
       setIsConnected(true);
-      console.log('✅ Connected to server');
+      console.log(' Connected to server');
     });
 
     newSocket.on('disconnect', () => {
@@ -53,7 +53,7 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on('join-error', (error) => {
-      console.error('🚫 Join error:', error);
+      console.error(' Join error:', error);
       alert(error.message);
     });
 

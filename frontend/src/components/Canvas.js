@@ -24,11 +24,9 @@ const Canvas = forwardRef(({
   const localRedoStack = useRef([]);
   const currentStroke = useRef([]); 
 
-  // For smoother drawing, use requestAnimationFrame
   const lastDraw = useRef(null);
   const pendingDraw = useRef(null);
 
-  // Expose imperative methods
 
   useImperativeHandle(ref, () => ({
     exportImage: () => {
@@ -73,7 +71,6 @@ const Canvas = forwardRef(({
     ctxRef.current.globalAlpha = opacity;
   }, [opacity]);
 
-  // Handle remote draw events
   useEffect(() => {
     if (!remoteDrawEvent) return;
     if (remoteDrawEvent.type === 'stroke' && remoteDrawEvent.points) {
@@ -95,7 +92,6 @@ const Canvas = forwardRef(({
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
     
-    // Pointer events have a consistent API for coordinates
     return {
       x: (e.clientX - rect.left) * scaleX,
       y: (e.clientY - rect.top) * scaleY
@@ -271,13 +267,10 @@ const Canvas = forwardRef(({
     }
   };
 
-  // Initialize undo stack on mount
   useEffect(() => {
     localUndoStack.current = [ctxRef.current.getImageData(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)];
     localRedoStack.current = [];
   }, []);
-
-  // Draw a full stroke from array of points
   const drawStroke = (points, settings) => {
     if (!points || points.length < 2) return;
     ctxRef.current.save();
@@ -293,7 +286,6 @@ const Canvas = forwardRef(({
     ctxRef.current.restore();
   };
 
-  // Draw a shape (rectangle or circle) from event data
   const drawShape = (event) => {
     const { shape, start, end, color, brushSize, opacity } = event;
     ctxRef.current.save();
@@ -313,7 +305,6 @@ const Canvas = forwardRef(({
     ctxRef.current.restore();
   };
 
-  // Draw text from event data
   const drawText = (event) => {
     const { text, point, color, brushSize, opacity } = event;
     ctxRef.current.save();

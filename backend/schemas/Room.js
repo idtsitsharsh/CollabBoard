@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 
-// Room Schema ---> when room made ( priavte or public )
 const roomSchema = new mongoose.Schema({
   roomId: {
     type: String,
@@ -55,7 +54,6 @@ const roomSchema = new mongoose.Schema({
   }
 });
 
-// Update the updatedAt field before saving
 roomSchema.pre('save', function(next) {
   this.updatedAt = new Date();
   next();

@@ -35,7 +35,7 @@ const corsOptions = {
     ) {
       return callback(null, true);
     }
-    console.log("❌ CORS rejected for:", origin);
+    console.log(" CORS rejected for:", origin);
     callback(new Error("CORS not allowed"));
   },
   methods: ["GET", "POST"],
@@ -55,26 +55,18 @@ const io = new Server(server, {
 });
 
 
-// After corsOptions:
-console.log("✅ Allowed origins:", allowedOrigins);
 
-// Before server.listen:
-console.log("➡️ Starting server on port:", PORT);
+console.log(" Allowed origins:", allowedOrigins);
 
-// Inside io.on("connection"):
-console.log("🟢 Inside io.on connection");
-
-// Inside io.use (if using middleware):
+console.log(" Starting server on port:", PORT);
+console.log(" Inside io.on connection");
 io.use((socket, next) => {
   console.log("🔁 Authorizing socket from origin:", socket.handshake.headers.origin);
-  next(); // allow all
+  next();
 });
 
-
-// Middleware
 app.use(express.json());
 
-// MongoDB Connection
 const MONGODB_URI = 'mongodb+srv://harshgupta:1234@collabboard.luqjeps.mongodb.net/?retryWrites=true&w=majority&appName=CollabBoard';
 let useMongoDB = true;
 
@@ -88,17 +80,14 @@ mongoose.connect(MONGODB_URI)
   useMongoDB = false;
 });
 
-// Fallback in-memory storage
 const inMemoryRooms = new Map();
 const inMemoryUsers = new Map();
 const inMemoryCanvasHistory = new Map(); 
 
-// Socket.io connection handling
 const rooms = new Map();
 const MAX_USERS_PER_ROOM = 20;
 const MAX_MESSAGES_PER_ROOM = 100;
 
-// Helper function to get or create room
 async function getOrCreateRoom(roomId, isPrivate = false, password = '') {
   if (useMongoDB) {
     try {
@@ -169,7 +158,6 @@ function getOrCreateRoomInMemory(roomId, isPrivate = false, password = '') {
   return room;
 }
 
-// Helper function to save room
 async function saveRoom(room) {
   if (useMongoDB) {
     try {
@@ -179,8 +167,6 @@ async function saveRoom(room) {
     }
   }
 }
-
-// Helper to get or create canvas history for a room
 function getOrCreateCanvasHistory(roomId) {
   let history = inMemoryCanvasHistory.get(roomId);
   if (!history) {
@@ -193,15 +179,14 @@ function getOrCreateCanvasHistory(roomId) {
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
 
-  // Join room
   socket.on('join-room', async (data) => {
     const { roomId, username, password } = data;
-    // Validate input
+    
     if (!roomId || !username || username.trim().length === 0) {
       socket.emit('join-error', { message: 'Invalid room ID or username' });
       return;
     }
-    // Sanitize username
+    
     const sanitizedUsername = username.trim().substring(0, 20);
     try {
       let room;
@@ -214,7 +199,6 @@ io.on('connection', (socket) => {
         socket.emit('join-error', { message: 'Room not found' });
         return;
       }
-      // Check if room is private and password is required
       if (room.isPrivate) {
         console.log('[JOIN-ROOM] Room is private. Received password:', password);
         console.log('[JOIN-ROOM] Stored room password (hash):', room.password);
@@ -236,7 +220,6 @@ io.on('connection', (socket) => {
           return;
         }
       }
-      // Check if user is already in the room
       const existingUser = room.users.find(user => user.socketId === socket.id);
       if (!existingUser) {
         room.users.push({ 
@@ -262,7 +245,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Drawing events
   socket.on('draw', async (data) => {
     const { roomId, ...drawData } = data;
     socket.to(roomId).emit('draw', data);
@@ -284,8 +266,6 @@ io.on('connection', (socket) => {
       }
     }
   });
-
-  // Stroke event for smooth collaborative drawing
   socket.on('stroke', async (data) => {
     const { roomId, ...strokeData } = data;
     socket.to(roomId).emit('stroke', data);
@@ -308,10 +288,10 @@ io.on('connection', (socket) => {
 
   socket.on('clear-canvas', async (data) => {
     const { roomId } = data;
-    // Reset canvas history
+   
     inMemoryCanvasHistory.set(roomId, { stack: [''], pointer: 0 });
     io.to(roomId).emit('clear-canvas');
-    // Clear canvas data in database
+
     try {
       const room = rooms.get(roomId);
       if (room) {
@@ -331,7 +311,7 @@ io.on('connection', (socket) => {
       history.pointer--;
       const prevDataUrl = history.stack[history.pointer];
       io.to(roomId).emit('canvas-data', { canvasData: prevDataUrl });
-      // Persist for reloads
+    
       const room = rooms.get(roomId);
       if (room) {
         room.canvasData = prevDataUrl;
@@ -348,7 +328,7 @@ io.on('connection', (socket) => {
       history.pointer++;
       const nextDataUrl = history.stack[history.pointer];
       io.to(roomId).emit('canvas-data', { canvasData: nextDataUrl });
-      // Persist for reloads
+  
       const room = rooms.get(roomId);
       if (room) {
         room.canvasData = nextDataUrl;
@@ -358,7 +338,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Chat events
   socket.on('send-message', async (data) => {
     if (!data.message || data.message.trim().length === 0) {
       return;
@@ -370,7 +349,6 @@ io.on('connection', (socket) => {
       timestamp: new Date()
     };
     
-    // Save message to database
     try {
       const room = rooms.get(data.roomId);
       if (room) {
@@ -391,7 +369,6 @@ io.on('connection', (socket) => {
     io.to(data.roomId).emit('receive-message', messageData);
   });
 
-  // Typing indicators
   socket.on('typing', (data) => {
     socket.to(data.roomId).emit('user-typing', {
       username: data.username
@@ -404,7 +381,6 @@ io.on('connection', (socket) => {
     });
   });
 
-  // Request canvas data
   socket.on('request-canvas', async (data) => {
     try {
       const { roomId } = data;
@@ -416,19 +392,16 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Shape event for collaborative rectangles/circles
   socket.on('shape', (data) => {
     const { roomId } = data;
     socket.to(roomId).emit('shape', data);
   });
 
-  // Text event for collaborative text
   socket.on('text', (data) => {
     const { roomId } = data;
     socket.to(roomId).emit('text', data);
   });
 
-  // Leave room
   socket.on('leave-room', async (data, cb) => {
     const { roomId } = data;
     let room;
@@ -452,7 +425,6 @@ io.on('connection', (socket) => {
     if (cb) cb();
   });
 
-  // Disconnect
   socket.on('disconnect', async () => {
     console.log('User disconnected:', socket.id);
    
@@ -486,7 +458,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// API Routes
 app.get('/api/rooms/:roomId', async (req, res) => {
   try {
     let room;
