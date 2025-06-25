@@ -44,6 +44,22 @@ const io = socketIo(server, {
   cors: corsOptions,
 });
 
+// After corsOptions:
+console.log("✅ Allowed origins:", allowedOrigins);
+
+// Before server.listen:
+console.log("➡️ Starting server on port:", PORT);
+
+// Inside io.on("connection"):
+console.log("🟢 Inside io.on connection");
+
+// Inside io.use (if using middleware):
+io.use((socket, next) => {
+  console.log("🔁 Authorizing socket from origin:", socket.handshake.headers.origin);
+  next(); // allow all
+});
+
+
 // Middleware
 app.use(express.json());
 
