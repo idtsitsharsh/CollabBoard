@@ -26,23 +26,29 @@ if (frontendURL) {
 
 const corsOptions = {
   origin: (origin, callback) => {
-    
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
+    console.log("🔎 CORS check origin:", origin);
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      (origin.startsWith("https://") && origin.endsWith(".vercel.app"))
+    ) {
+      return callback(null, true);
     }
+    console.log("❌ CORS rejected for:", origin);
+    callback(new Error("CORS not allowed"));
   },
+  methods: ["GET", "POST"],
   credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
 };
 
 app.use(cors(corsOptions));
+app.use(express.json());
 
-const io = socketIo(server, {
-  cors: corsOptions,
+const io = new Server(server, {
+  cors: corsOptions
 });
+
 
 // After corsOptions:
 console.log("✅ Allowed origins:", allowedOrigins);
