@@ -17,7 +17,7 @@ const server = http.createServer(app);
 const frontendURL = process.env.FRONTEND_URL;
 const allowedOrigins = [
   'http://localhost:3000', 
-  frontendURL,
+  frontendURL
 ];
 
 if (frontendURL) {
