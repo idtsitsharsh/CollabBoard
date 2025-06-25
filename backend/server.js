@@ -13,7 +13,7 @@ dotenv.config();
 const app = express();
 const server = http.createServer(app);
 
-
+const PORT = process.env.PORT || 5000;
 const frontendURL = process.env.FRONTEND_URL;
 const allowedOrigins = [
   'http://localhost:3000', 
@@ -561,7 +561,6 @@ app.get('/api/rooms', async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(useMongoDB ? 'Using MongoDB for data persistence' : 'Using in-memory storage for data persistence');
